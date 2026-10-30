@@ -1,0 +1,6 @@
+{
+  "name": "daybook-accounting",
+  "private": true,
+  "scripts": {"dev": "concurrently -n api,web -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"", "build": "npm run build --prefix client", "start": "npm run start --prefix server", "db:setup": "npm run db:setup --prefix server"},
+  "devDependencies": {"concurrently": "^9.1.2"}
+}
