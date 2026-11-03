@@ -85,9 +85,8 @@ Set `INITIAL_ADMIN_EMAIL` and a unique `INITIAL_ADMIN_PASSWORD` (at least 16 cha
 
 The public site and private database are different things: anyone can visit the website and create an account, while PostgreSQL accepts connections only from the backend using a protected connection string. Do not expose the database publicly.
 
-1. Create a GitHub account and an empty repository (do not add a README or license if you plan to push this folder's README). This workspace is not currently a Git repository. From the project root run:
+1. Create a GitHub account and an empty repository (do not add a README or license if you plan to push this folder's README). This workspace is already a Git repository. Check `git status` first, then add and push the project:
    ```sh
-   git init -b main
    git check-ignore -v .env
    git add .
    git status
@@ -107,6 +106,19 @@ The public site and private database are different things: anyone can visit the 
 10. For a custom domain, buy/register a domain, add it in your frontend host's domain settings, follow its DNS instructions (usually CNAME and/or apex A/ALIAS records), and wait for DNS/HTTPS certificate provisioning. If the frontend origin changes, update `CLIENT_URL`.
 
 Free tiers change over time and may sleep when idle, have build/runtime limits, limited database storage/retention, or no automated backups. Check current provider pricing and limits before inviting customers. Set up scheduled encrypted backups (for PostgreSQL, periodic `pg_dump` to private storage), restrict access to backup credentials, test restoring backups, and establish a retention policy. Use managed database backups where available. Rotate secrets if exposed and never send database URLs to the browser.
+
+### Alternative: Neon PostgreSQL with Render
+
+This repository includes a `render.yaml` Blueprint for the Render API and static frontend. In Render, choose **New > Blueprint**, connect the GitHub repository, and review the two services before applying. The Blueprint asks for `DATABASE_URL`, `CLIENT_URL`, and `VITE_API_URL`; configure those as follows:
+
+1. In Neon, create a project and database. In the Neon dashboard choose **Connect**, select the project/database, and copy its connection string. Keep it private. Use the pooled connection string for the app if available; the backend needs TLS, which is enabled for production connections.
+2. Put that connection string into the Render `daybook-api` service's `DATABASE_URL` secret. The database does not need to be exposed to the public website or browser. Neon connections are authenticated by the secret URL; use Neon's IP restrictions if available on your plan.
+3. Set the API's `CLIENT_URL` to the frontend's exact HTTPS origin, such as `https://daybook-web.onrender.com` (no path or trailing slash). If Render assigns a different URL or you use a custom domain, use that instead.
+4. Set the static site's `VITE_API_URL` to the API URL plus `/api`, such as `https://daybook-api.onrender.com/api`. Vite embeds this public API address in the browser build; it must not contain a secret.
+5. Apply the schema once using the API's Render Shell: run `npm run db:setup` from the `server` root directory. Alternatively, run it locally with the same Neon `DATABASE_URL` temporarily set in your shell. The setup command creates the tables and indexes from `database/schema.sql`; it is safe to repeat.
+6. Confirm the API health check at `https://YOUR-API.onrender.com/api/health`, then use the frontend URL to register and try the app. The website is public; the database connection remains protected by the backend-held credential. Never put `DATABASE_URL` in a `VITE_*` variable or GitHub.
+
+If creating Render services manually instead of using the Blueprint, use the settings in the preceding Render section: API root `server`, build `npm ci --offline=false`, start `npm start`; frontend root `client`, build `npm ci --offline=false && npm run build`, publish `dist`. The GitHub Actions workflow at `.github/workflows/ci.yml` runs dependency installation, backend syntax checks, and the Vite production build on pushes and pull requests. It does not connect to PostgreSQL or verify live registration/login.
 
 ## Troubleshooting
 

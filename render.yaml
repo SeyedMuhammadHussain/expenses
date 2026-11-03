@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: daybook-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm ci --offline=false
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+
+  - type: web
+    name: daybook-web
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci --offline=false && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

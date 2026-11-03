@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+            server/package-lock.json
+      - name: Install root tools
+        run: npm ci
+      - name: Install API dependencies
+        run: npm ci --prefix server
+      - name: Install frontend dependencies
+        run: npm ci --prefix client
+      - name: Verify API JavaScript syntax
+        run: node --check server/src/index.js && node --check server/src/auth.js && node --check server/src/db.js && node --check server/src/migrate.js
+      - name: Build frontend
+        run: npm run build --prefix client

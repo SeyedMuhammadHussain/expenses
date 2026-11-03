@@ -3,6 +3,10 @@ dist/
 .env
 .env.*
 !.env.example
+.vite/
+.render/
+.vercel/
+*.log
 # Local credentials, private keys, and database backups
 .secrets/
 secrets/
